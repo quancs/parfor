@@ -1,4 +1,5 @@
 from typing import Any, Callable, List
+import threading
 
 
 def parfor(data_list: List[Any], func: Callable, num_workers: int, prog_bar: bool = True, **kwargs):
@@ -11,8 +12,6 @@ def parfor(data_list: List[Any], func: Callable, num_workers: int, prog_bar: boo
         prog_bar ([bool]): whether to show the progress bar
         kwargs: other args for func
     """
-
-    import threading
 
     index = 0
     lock = threading.Lock()
@@ -51,12 +50,19 @@ def parfor(data_list: List[Any], func: Callable, num_workers: int, prog_bar: boo
     else:
         do_work(0)
 
+    if prog_bar:
+        bar.close()
+
 
 if __name__ == '__main__':
 
-    def myfunc(worker_id, data, passwd):
-        import time
-        time.sleep(0.1)
-        # print('wid=', worker_id, 'data=', data, passwd)
+    sum = [0]
+    lock = threading.Lock()
 
-    parfor(list(range(100)), myfunc, 3, passwd=1)
+    def myfunc(worker_id, data, passwd):
+        lock.acquire()
+        sum[0] += 1
+        lock.release()
+
+    parfor(list(range(1000000)), myfunc, 10, passwd=1)
+    print(sum)
